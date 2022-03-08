@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Eigen" type="javaScript">
+    <CLASSES />
+    <DOCUMENTATION>
+      <root url="https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/eigen.rb" />
+    </DOCUMENTATION>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

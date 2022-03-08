@@ -3,4 +3,4 @@ project(c__)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(c__ LoadCSVDataset.cpp init_model.cpp LoadCSVDataset.h)
+add_executable(c__ abalone/AbaloneExecute.cpp abalone/LoadCsvDataset.cpp abalone/LoadCsvDataset.h abalone/InitModel.cpp main.cpp)
