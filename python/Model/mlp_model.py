@@ -1,6 +1,6 @@
-from tracemalloc import start
 import numpy as np
 import time
+from Activation.activation import *
 
 class MlpModel(object):
     def __init__(self, name, dataset, hidden_configs):
@@ -119,12 +119,12 @@ class MlpModel(object):
     
     def forward_layer(self, x, hidden_config, param):
         y = np.matmul(x, param['w']) + param['b']
-        if hidden_config is not None: y = self.relu(y)
+        if hidden_config is not None: y = relu(y)
         return y, [x, y]
     
     def backprop_layer(self, G_y, hidden_config, param, aux):
         x, y = aux
-        if hidden_config is not None: G_y = self.relu_derv(y) * G_y
+        if hidden_config is not None: G_y = relu_derv(y) * G_y
 
         g_y_weight = x.T
         g_y_x = param['w'].T

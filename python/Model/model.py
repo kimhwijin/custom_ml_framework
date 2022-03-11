@@ -12,5 +12,4 @@ class Model(object):
         self.train(epochs, batch_size, learning_rate, report)
         self.test()
         if show_cnt > 0: self.visualize(show_cnt)
-
     
