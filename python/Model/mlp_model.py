@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from activation.activation import *
+from python.activation import activations
 
 class MlpModel(object):
     def __init__(self, name, dataset, hidden_configs):

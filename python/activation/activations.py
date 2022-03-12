@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def relu(x):
     return np.maximum(x, 0)
 
@@ -37,8 +36,22 @@ def softmax_cross_entropy_with_logits(labels, logits):
 def softmax_cross_entropy_with_logits_derv(labels, logits):
     return softmax(logits) - labels
 
+def linear(x):
+    return x
 
+def parse_activation(identifier):
+    return globals().get(identifier)
 
-
+def get(identifier):
+    if identifier is None:
+        return linear
+    elif isinstance(identifier, str):
+        return parse_activation(identifier)
+    elif callable(identifier):
+        return identifier
+    else:
+        raise TypeError("")
+    
+    
 
 

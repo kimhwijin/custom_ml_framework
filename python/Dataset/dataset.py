@@ -1,5 +1,5 @@
 import numpy as np
-from python.activation.activation import *
+from python.activation.activations import *
 
 class Dataset(object):
     def __init__(self, name, mode):
