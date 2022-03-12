@@ -31,6 +31,8 @@ def softsign(x):
     return output, x
 
 def leaky_relu(x, alpha=0.3):
+    if alpha < 0:
+        alpha = 0
     output = np.where(x > 0, x, alpha * x)
     return output
 
