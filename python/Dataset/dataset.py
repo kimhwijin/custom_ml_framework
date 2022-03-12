@@ -1,5 +1,5 @@
 import numpy as np
-from Activation.activation import *
+from python.activation.activation import *
 
 class Dataset(object):
     def __init__(self, name, mode):
@@ -60,6 +60,27 @@ class Dataset(object):
         return indices[train_from: train_to], indices[valid_from: valid_to], indices[test_from: test_to]
 
     
+    def forward_postproc(self, output, y, mode=None):
+        if mode is None: mode = self.mode
+
+        if mode == 'regression':
+            diff = output - y
+            square = np.square(diff)
+            loss = np.mean(square)
+            aux = diff
+
+        elif mode == 'binary':
+            entropy = sigmoid_cross_entropy_with_logits(y, output)
+            loss = np.mean(entropy)
+            aux = [y, output]
+        elif mode == 'select':
+            entropy = softmax_cross_entropy_with_logits(y, output)
+            loss = np.mean(entropy)
+            aux = [output, y, entropy]
+
+        return loss, aux
+
+
     def backprop_postproc(self, G_loss, aux, mode=None):
         if mode is None: mode = self.mode
 
@@ -82,4 +103,15 @@ class Dataset(object):
 
             g_loss_entropy = np.ones(shape) / np.prod(shape)
             g_entropy_output = sigmoid_cross_entropy_with_logits_derv(y, output)
+
+            G_entropy = g_loss_entropy * G_loss
+            G_output = g_entropy_output * G_entropy
+        
+        elif mode == 'select':
+            output, y, entropy = aux
+            shape = output.shape
+
+
+
+
 
