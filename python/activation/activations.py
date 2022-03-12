@@ -1,7 +1,22 @@
 import numpy as np
 
+def softmax(x, axis=-1):
+    if len(x.shape) > 1:
+        e = np.exp(x - np.max(x, axis=axis, keepdims=True))
+        s = np.sum(e, axis=axis, keepdims=True)
+        output = e / s
+    else:
+        raise ValueError()
+    return {'output': output, 'logits': x}
+
+def elu(x, alpha=1.0):
+    output = np.where(x > 0, x, alpha * (np.exp(x) - 1))
+    return {'output': output}
+
 def relu(x):
-    return np.maximum(x, 0)
+    ouptut = np.maximum(x, 0)
+    return {'output': ouptut}
+
 
 def relu_derv(y):
     return np.sign(y)
@@ -20,14 +35,6 @@ def tanh(x):
 
 def tanh_derv(y):
     return (1.0 + y) * (1.0 - y)
-
-def softmax(x):
-    max_element = np.max(x, axis=1)
-    diff =(x.T - max_element).T
-    exp = np.ex(diff)
-    sum_exp = np.sum(exp, axis=1)
-    probs = (exp.T / sum_exp).T
-    return probs
 
 def softmax_cross_entropy_with_logits(labels, logits):
     probs = softmax(logits)
