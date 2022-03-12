@@ -109,8 +109,57 @@ class Dataset(object):
         
         elif mode == 'select':
             output, y, entropy = aux
-            shape = output.shape
+            
+            g_loss_entropy = 1 / np.prod(entropy.shape)
+            g_entropy_output = softmax_cross_entropy_with_logits_derv(y, output)
 
+            G_entropy = g_loss_entropy * G_loss
+            G_output = g_entropy_output * G_entropy
+
+            return G_output
+        
+    
+    def eval_accuracy(self, x, y, output, mode=None):
+        if mode is None: mode = self.mode
+
+        if mode == 'regression':
+            mse = np.mean(np.square(output - y))
+            accuracy = 1 - np.sqrt(mse) / np.mean(y)
+        
+        elif mode == 'binary':
+            estimate = np.greater(output, 0)
+            answer = np.equal(y, 1.0)
+            correct = np.equal(estimate, answer)
+            accuracy = np.mean(correct)
+
+        elif mode == 'select':
+            estimate = np.argmax(output, axis=1)
+            answer = np.equal(y, 1.0)
+            correct = np.equal(estimate, answer)
+            accuracy = np.mean(correct)
+
+        return accuracy
+
+    def get_estimate(self, output, mode=None):
+        if mode is None: mode = self.mode
+
+        if mode == 'regression':
+            estimate = output
+        elif mode == 'binary':
+            estimate = sigmoid(output)
+        elif mode == 'select':
+            estimate = softmax(estimate)
+
+        return estimate
+    
+    def train_prt_result(self, epoch, costs, accs, acc, time1, time2):
+        print('    Epoch {}: cost={:5.3f}, accuracy={:5.3f}/{:5.3f} ({}/{} secs)'. \
+        format(epoch, np.mean(costs), np.mean(accs), acc, time1, time2))
+
+    def test_prt_result(self, name, acc, time):
+        print('Model {} test report: accuracy = {:5.3f}, ({} secs)\n'. \
+        format(name, acc, time))
+        
 
 
 
