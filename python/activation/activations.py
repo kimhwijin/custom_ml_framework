@@ -1,27 +1,32 @@
 import numpy as np
 
-def softmax(x, axis=-1):
+def softmax(x, axis=-1, training=True):
     if len(x.shape) > 1:
         e = np.exp(x - np.max(x, axis=axis, keepdims=True))
         s = np.sum(e, axis=axis, keepdims=True)
         output = e / s
+        dydx = None if not training else (1-output) * output
     else:
         raise ValueError()
-    return {'output': output, 'x': x}
+    return {'output': output, 'dydx': dydx}
 
-def elu(x, alpha=1.0):
+def elu(x, alpha=1.0, training=True):
     output = np.where(x > 0, x, alpha * (np.exp(x) - 1))
-    return {'output': output, 'x': None}
+    dydx = None if not training else np.where(x > 0, 1, output + alpha)
+    return {'output': output, 'dydx': dydx}
 
-def selu(x):
+def selu(x, training=True):
     alpha = 1.67326324
     scale = 1.05070098
-    output = scale * elu(x, alpha)['output']
-    return {'output': output, 'x': None}
+    _elu = elu(x, alpha)
+    output = scale * _elu['output']
+    dydx = None if not training else scale * _elu['dydx']
+    return {'output': output, 'dydx': dydx}
 
-def relu(x):
+def relu(x, training=True):
     output = np.maximum(x, 0)
-    return {'output': output, 'x': None}
+    dydx = None if not training else np.sign(output)
+    return {'output': output, 'dydx': dydx}
 
 def softplus(x):
     output = np.log(np.exp(x) + 1)
@@ -76,9 +81,14 @@ def get(identifier):
     else:
         raise TypeError("")
 
-
-def relu_derv(y):
+def relu_derv(output):
+    y = output['output']
     return np.sign(y)
+
+def elu_derv(output):
+    x = output['x']
+    y = output['output']
+    np.where(x > 0, 1, np.exp())
 
 def sigmoid_cross_entropy_with_logits(z, x):
     return relu(x) - x * z + np.log(1 + np.exp(-np.abs(x)))
