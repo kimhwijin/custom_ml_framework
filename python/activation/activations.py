@@ -1,9 +1,7 @@
-from git import Object
-from matplotlib.pyplot import sca
 import numpy as np
 
 
-class Activation(Object):
+class Activation(object):
     def __init__(self, name, training):
         self.name = name
         self.fn = get(name)
