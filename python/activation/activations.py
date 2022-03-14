@@ -1,72 +1,116 @@
+from git import Object
+from matplotlib.pyplot import sca
 import numpy as np
+
+
+class Activation(Object):
+    def __init__(self, name, training):
+        self.name = name
+        self.fn = get(name)
+        self.diff_fn = get(name + '_diff')
+        self.training = training
+
+    def forward(self, x, **kwargs):
+        
+        if self.training:
+            output, self.diff_args = self.fn(x, training=self.training, **kwargs)
+        else:
+            output, _ = self.fn(x, training=self.training, **kwargs)
+
+        self.fn_configs = kwargs
+
+        return output
+    
+    def backprop(self):
+        return self.diff_fn(**self.diff_args, self.fn_configs)
+
+
 
 def softmax(x, axis=-1, training=True):
     if len(x.shape) > 1:
         e = np.exp(x - np.max(x, axis=axis, keepdims=True))
         s = np.sum(e, axis=axis, keepdims=True)
         output = e / s
-        dydx = None if not training else (1-output) * output
     else:
         raise ValueError()
-    return {'output': output, 'dydx': dydx}
+    return (output, {'x': None, 'y': output}) if training else (output, None)
+
+
+def softmax_diff(x, y, axis=-1):
+    return (1-y) * y
+
 
 def elu(x, alpha=1.0, training=True):
     output = np.where(x > 0, x, alpha * (np.exp(x) - 1))
-    dydx = None if not training else np.where(x > 0, 1, output + alpha)
-    return {'output': output, 'dydx': dydx}
+    return (output, {'x': x, 'y': None}) if training else (output, None)
+
+def elu_diff(x, y, alpha=1.0):
+    return np.where(x > 0, 1, alpha * np.exp(x))
 
 def selu(x, training=True):
     alpha = 1.67326324
     scale = 1.05070098
-    _elu = elu(x, alpha)
-    output = scale * _elu['output']
-    dydx = None if not training else scale * _elu['dydx']
-    return {'output': output, 'dydx': dydx}
+    output = scale * np.where(x > 0, x, alpha * (np.exp(x) - 1))
+    return (output, {'x': x, 'y': None}) if training else (output, None)
+
+def selu_diff(x, y):
+    alpha = 1.67326324
+    scale = 1.05070098
+    return np.where(x > 0, scale, scale * alpha * np.exp(x))
+
 
 def relu(x, training=True):
     output = np.maximum(x, 0)
-    dydx = None if not training else np.sign(output)
-    return {'output': output, 'dydx': dydx}
+    return (output, {'x': None, 'y': output}) if training else (output, None)
 
-def softplus(x):
-    output = np.log(np.exp(x) + 1)
-    return {'output': output, 'x': x}
+def relu_diff(x, y):
+    return np.sign(y)
 
-def softsign(x):
-    output = x / (np.abs(x) + 1)
-    return {'output': output, 'x': x}
-
-def leaky_relu(x, alpha=0.3):
+def leaky_relu(x, alpha=0.3, training=True):
     if alpha < 0:
         alpha = 0
     output = np.where(x > 0, x, alpha * x)
-    return {'output': output, 'x': None}
+    return (output, {'x': x, 'y': None}) if training else (output, None)
 
-def sigmoid(x):
+def leaky_relu_diff(x, y, alpha=0.3):
+    return np.where(x > 0, 1, alpha)
+
+def sigmoid(x, training=True):
     output = 1 / (1 + np.exp(-x))
-    return {'output': output, 'x': None}
+    return (output, {'x': None, 'y': output}) if training else (output, None)
 
-def hard_sigmoid(x):
+def sigmoid_diff(x, y):
+    return (1 - y) * y
+
+def hard_sigmoid(x, training=True):
     # x < -2.5 : 0
     # -2.5 <= x <= 2.5 : 0.2 * x + 0.5
     # 2.5 < x : 1
     output = np.where(x > 2.5, 1, np.where(x < -2.5, 0, 0.2 * x + 0.5))
-    return {'output': output, 'x': None}
+    return (output, {'x': x, 'y': output}) if training else (output, None)
 
-def tanh(x):
-    output = 2 * sigmoid(2*x)['output'] - 1
-    return {'output': output, 'x': None}
+def hard_sigmoid_diff(x, y):
+    return np.where(x > 2.5 and x < -2.5, 0, 0.2)
 
-def hard_tanh(x):
-    output = 2 * hard_sigmoid(2 * x)['output'] - 1
-    return {'output': output, 'x': None}
+def tanh(x, training=True):
+    output = 2 / (1 + np.exp(-2 * x)) - 1
+    return (output, {'x': None, 'y': output}) if training else (output, None)
 
-def exponential(x):
+def tanh_diff(x, y):
+    return 1 - y ** 2
+
+def exponential(x, training=True):
     output = np.exp(x)
-    return {'output': output, 'x': None}
+    return (output, {'x': None, 'y': output}) if training else (output, None)
 
-def linear(x):
-    return {'output': x, 'x': None}
+def exponential_diff(x, y):
+    return y
+
+def linear(x, training=True):
+    return (x, {'x': None, 'y': None}) if training else (x, None)
+
+def linear_diff(x, y):
+    return 1
 
 def parse_activation(identifier):
     return globals().get(identifier)
