@@ -74,7 +74,7 @@ def leaky_relu_diff(x, y, alpha=0.3):
     return np.where(x > 0, 1, alpha)
 
 def sigmoid(x, training=True):
-    output = 1 / (1 + np.exp(-x))
+    output = np.where(x > 0, 1 / (1 + np.exp(-x)), (np.exp(x) / (1 + np.exp(x))))
     return (output, {'x': None, 'y': output}) if training else (output, None)
 
 def sigmoid_diff(x, y):
@@ -138,8 +138,6 @@ def sigmoid_cross_entropy_with_logits(z, x):
 def sigmoid_cross_entropy_with_logits_derv(z, x):
     return -z + sigmoid(x)
 
-def tanh_derv(y):
-    return (1.0 + y) * (1.0 - y)
 
 def softmax_cross_entropy_with_logits(labels, logits):
     probs = softmax(logits)
