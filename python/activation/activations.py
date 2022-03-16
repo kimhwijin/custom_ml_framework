@@ -11,7 +11,7 @@ class Activation(object):
     def forward(self, x, **kwargs):
         
         if self.training:
-            output, self.diff_args = self.fn(x, training=self.training, **kwargs)
+            output, self.diff_kwargs = self.fn(x, training=self.training, **kwargs)
         else:
             output, _ = self.fn(x, training=self.training, **kwargs)
 
@@ -19,8 +19,9 @@ class Activation(object):
 
         return output
     
-    def backprop(self):
-        return self.diff_fn(**self.diff_args, self.fn_configs)
+    #not training -> not calling
+    def backprop(self, upstream_gradient):
+        return upstream_gradient * self.diff_fn(**self.diff_args, self.fn_configs)
 
 
 
