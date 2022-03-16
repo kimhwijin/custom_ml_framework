@@ -18,7 +18,8 @@ class Dense(Layer):
                 bias_regularizer=None,
                 # kernel_constraint=None,
                 # bias_constraint=None,
-                dtype=np.float32
+                dtype=np.float32,
+                training=True,
                 ):
     
         self.units = units if isinstance(units, int) else int(units)
@@ -34,6 +35,7 @@ class Dense(Layer):
         # self.kernel_constraint = kernel_constraint
         # self.bias_constraint = bias_constraint
         self.dtype = dtype
+        self.training = training
 
     def build(self, input_shape):
         
@@ -51,9 +53,19 @@ class Dense(Layer):
         if inputs.dtype != self.dtype:
             warnings.warn("입력과, 커널의 데이터 타입이 다름. input dtype : {}, kernel dtype : {}".format(inputs.dtype, self.weight.dtype))
             inputs = inputs.astype(self.dtype)
-        
+        if self.training:
+            self.inputs = inputs
+
         outputs = np.matmul(inputs, self.weight) + self.bias if self.use_bias else np.matmul(inputs, self.weight)
         return outputs
     
 
-        
+    def backprop(self, dLdy, learning_rate):
+        #y = xw + b
+        #dLdw = dydw * dLdy
+        #dLdb = dydb * dLdy = dLdy
+        dLdw = np.matmul(self.inputs.T, dLdy)
+
+        self.weight = self.weight - learning_rate * dLdw
+
+        self.bias = self.bias - learning_rate * dLdy
