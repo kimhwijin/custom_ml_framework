@@ -1,7 +1,8 @@
 from python.layer.base_layer import Layer
 import numpy as np
 import warnings
-
+from python.initializer import initializers
+from python.regularizer import regularizers
 '''
 tensorflow keras 참고
 '''
@@ -15,45 +16,44 @@ class Dense(Layer):
                 bias_initializer='zeros',
                 kernel_regularizer=None,
                 bias_regularizer=None,
-                kernel_constraint=None,
-                bias_constraint=None,
+                # kernel_constraint=None,
+                # bias_constraint=None,
                 dtype=np.float32
                 ):
     
         self.units = units if isinstance(units, int) else int(units)
 
-        if self.units < 0:
-            raise ValueError("")
+        if self.units <= 0:
+            raise ValueError("units 이 0 이하 입니다. units : {}".format(self.units))
         self.activation = activation
         self.use_bias = use_bias
-        self.kernel_initializer = kernel_initializer
-        self.bias_initializer = bias_initializer
-        self.kernel_regularizer = kernel_regularizer
-        self.bias_regularizer = bias_regularizer
-        self.kernel_constraint = kernel_constraint
-        self.bias_constraint = bias_constraint
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        # self.kernel_constraint = kernel_constraint
+        # self.bias_constraint = bias_constraint
         self.dtype = dtype
 
     def build(self, input_shape):
         
         output_dim = input_shape[-1]
         kernel_shape = (self.units, output_dim)
-
         self.weight = self.kernel_initializer(kernel_shape, dtype=self.dtype)
         
         if self.use_bias:
-            self.bias = self.bias_initializer(output_dim, dtype=self.dtype)
+            bias_shape = (1, output_dim)
+            self.bias = self.bias_initializer(bias_shape, dtype=self.dtype)
         
         self.built = True
     
-    def call(self, inputs):
-        if inputs.dtype is not self.dtype:
-            warnings.warn("입력과, 커널의 데이터 타입이 다름.")
+    def forward(self, inputs):
+        if inputs.dtype != self.dtype:
+            warnings.warn("입력과, 커널의 데이터 타입이 다름. input dtype : {}, kernel dtype : {}".format(inputs.dtype, self.weight.dtype))
             inputs = inputs.astype(self.dtype)
         
         outputs = np.matmul(inputs, self.weight) + self.bias if self.use_bias else np.matmul(inputs, self.weight)
-
         return outputs
     
-        
+
         
