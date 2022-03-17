@@ -64,8 +64,15 @@ class Dense(Layer):
         #y = xw + b
         #dLdw = dydw * dLdy
         #dLdb = dydb * dLdy = dLdy
+
+        if self.kernel_regularizer is not None:
+            delta = self.kernel_regularizer(self.weight)
+        else:
+            delta = 1
+
         dLdw = np.matmul(self.inputs.T, dLdy)
+        delta *= dLdw
 
-        self.weight = self.weight - learning_rate * dLdw
+        self.weight = self.weight - learning_rate * delta
 
-        self.bias = self.bias - learning_rate * dLdy
+        self.bias = self.bias - learning_rate * delta

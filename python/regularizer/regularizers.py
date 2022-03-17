@@ -1,3 +1,16 @@
+import numpy as np
+
+def l2(weight):
+    return np.sqrt(np.sum(np.square(weight)))
+
+def l2_diff(weight, alpha=0.01):
+    return alpha * np.abs(weight)
+
+def l1(weight):
+    return np.sum(np.abs(weight))
+
+def l1_diff(weight, alpha=0.01):
+    return alpha
 
 
 def parse_activation(identifier):
