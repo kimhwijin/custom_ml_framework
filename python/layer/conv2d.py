@@ -25,7 +25,7 @@ class Conv2D(Layer):
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, 2)
         self.strides = conv_utils.normalize_tuple(strides, 2)
         self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2)
-        self.padding = conv_utils.normalize_padding(padding)
+        self.padding = conv_utils.valid_check_padding(padding)
         if self.padding == 'causal':
             raise ValueError('Causal 패딩은 Conv1D 에서만 사용됩니다.')
         self.use_bias = use_bias
@@ -37,17 +37,13 @@ class Conv2D(Layer):
         self.groups = groups
 
     def compute_output_shape(self, input_shape):
-        """input_shape : n x width x height x channels
+        """O = (I - K + 2P) / S + 1
+        padding same : 
         """
-        input_shape = np.array(input_shape)
-        if self.padding == 'same':
-            output_image_shape = np.ceil(input_shape[1:3] / self.strides).astype(np.int32)
-        else:
-            input_image_shape = input_shape[1:3]
-            output_image_shape = np.floor((input_image_shape - self.kernel_size) / self.strides).astype(np.int32) + 1
-
-        output_shape = (input_shape[0], *output_image_shape, self.filters)
-        return output_shape
+        ih, iw = input_shape[1:3]
+        oh = conv_utils.compute_output_size(self.padding, ih, self.kernel_size[0], self.strides[0])
+        ow = conv_utils.compute_output_size(self.padding, iw, self.kernel_size[1], self.strides[1])
+        return (input_shape[0], oh, ow, self.filters)
         
     def build(self, input_shape):
         #nx32x32x64 -> 128x3x3
@@ -70,9 +66,8 @@ class Conv2D(Layer):
             warnings.warn("입력과 커널의 데이터 타입이 일치하지 않습니다. input dtype : {}, kernel dtype : {}".format(inputs.dtype, self.weight.dtype))
             inputs = inputs.astype(self.dtype)
 
-        if self.training:
+        if self._training:
             self.inputs = inputs
 
-        outputs = np.matmul(inputs, self.weight) + self.bias if self.use_bias else np.matmul(inputs, self.weight)
-        return outputs
+
     
