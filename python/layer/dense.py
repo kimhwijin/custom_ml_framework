@@ -52,7 +52,7 @@ class Dense(Layer):
     
     def forward(self, inputs):
         if inputs.dtype != self.dtype:
-            warnings.warn("입력과, 커널의 데이터 타입이 다름. input dtype : {}, kernel dtype : {}".format(inputs.dtype, self.weight.dtype))
+            warnings.warn("입력과 커널의 데이터 타입이 일치하지 않습니다. input dtype : {}, kernel dtype : {}".format(inputs.dtype, self.weight.dtype))
             inputs = inputs.astype(self.dtype)
         if self.training:
             self.inputs = inputs
@@ -61,7 +61,7 @@ class Dense(Layer):
         return outputs
     
 
-    def backprop(self, dLdy, learning_rate):
+    def backprop(self, dLdy, optimizer):
         #y = xw + b
         #dLdw = dydw * dLdy
         #dLdb = dydb * dLdy = dLdy
@@ -70,9 +70,9 @@ class Dense(Layer):
 
         dLdw = np.matmul(self.inputs.T, dLdy)
         kernel_delta = dLdw + kernel_regularize_term
-        self.weight = self.weight - learning_rate * kernel_delta
+        self.weight = self.weight - optimizer.learning_rate * kernel_delta
 
         if self.use_bias:
             bias_regularize_term = self.bias_regularizer(self.bias) if self.bias_regularizer is not None else 0
             bias_delta = dLdy + bias_regularize_term
-            self.bias = self.bias - learning_rate * bias_delta
+            self.bias = self.bias - optimizer.learning_rate * bias_delta

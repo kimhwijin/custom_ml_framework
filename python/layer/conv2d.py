@@ -3,6 +3,8 @@ import numpy as np
 from python.initializer import initializers
 from python.regularizer import regularizers
 from python.utils import conv_utils
+import warnings
+
 
 class Conv2D(Layer):
     def __init__(self, 
@@ -35,10 +37,18 @@ class Conv2D(Layer):
         self.groups = groups
 
     def compute_output_shape(self, input_shape):
-        #input_shape : n x filters x width x height
-        kernel_width, kernel_height = self.kernel_size
-        input_width, input_height = input_shape[-2:]
-    
+        """input_shape : n x width x height x channels
+        """
+        input_shape = np.array(input_shape)
+        if self.padding == 'same':
+            output_image_shape = np.ceil(input_shape[1:3] / self.strides).astype(np.int32)
+        else:
+            input_image_shape = input_shape[1:3]
+            output_image_shape = np.floor((input_image_shape - self.kernel_size) / self.strides).astype(np.int32) + 1
+
+        output_shape = (input_shape[0], *output_image_shape, self.filters)
+        return output_shape
+        
     def build(self, input_shape):
         #nx32x32x64 -> 128x3x3
         #w : 64x128x3x3
@@ -54,3 +64,15 @@ class Conv2D(Layer):
             bias_shape = (1, self.filters, ) + (1,) * len(self.kernel_size)
             self.bias = self.bias_initializer(bias_shape, dtype=self.dtype)
         
+
+    def forward(self, inputs):
+        if inputs.dtype != self.dtype:
+            warnings.warn("입력과 커널의 데이터 타입이 일치하지 않습니다. input dtype : {}, kernel dtype : {}".format(inputs.dtype, self.weight.dtype))
+            inputs = inputs.astype(self.dtype)
+
+        if self.training:
+            self.inputs = inputs
+
+        outputs = np.matmul(inputs, self.weight) + self.bias if self.use_bias else np.matmul(inputs, self.weight)
+        return outputs
+    
