@@ -39,7 +39,7 @@ def compute_output_padding_size(padding, i, k, s):
     
     if padding == 'same':
         o = math.ceil(i / s)
-        p = math.floor(((o - 1) * s + k - i) / 2)
+        p = math.ceil(((o - 1) * s + k - i) / 2)
     elif padding == 'valid':
         o = math.floor((i - k) / s + 1)
         p = 0
@@ -47,8 +47,33 @@ def compute_output_padding_size(padding, i, k, s):
     return o, p
 
 
+def img2col(x, y_shape, kernel_size, stride, padding_size):
+    # x : N, XH, XW, XC
+    # y : N, YH, YW, YC
+
+    kh, kw = kernel_size
+    sh, sw = stride
+    ph, pw = padding_size
+
+    n, xh, xw, xc = x.shape
+    n, yh, yw, yc = y_shape
     
+    # N, XH + 2PH, XW + 2PW, XC
+    padded_x = np.pad(x, [(0, 0), (ph, ph), (pw, pw), (0, 0)], 'constant')
+
+    # N, KH, KW, YH, YW, XC
+    col = np.zeros((n, kh, kw, yh, yw, xc))
+
+    for h in range(kh):
+        h_max = h + sh * yh
+        for w in range(kw):
+            w_max = w + sw * yw
+            col[:, h, w, :, :, :] = padded_x[:, h:h_max:sh, w:w_max:sw, :]
     
+    # Transpose : N , YH , YW , XC , KH, KW
+    # Reshape : N x YH x YH , XC x KH x KW
+    col = np.transpose(col, (0,3,4,5,1,2)).reshape(n*yh*yw, -1)
+    return col
 
     
 
