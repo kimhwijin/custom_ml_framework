@@ -20,7 +20,7 @@ def valid_check_padding(value):
     if not isinstance(value, str):
         raise ValueError("입력 인자 패딩 타입 올바르지 않습니다. value : {}, type : {}".format(value, type(value)))
     padding = value.lower()
-    if padding not in ('valid', 'same', 'causal'):
+    if padding not in ('valid', 'same'):
         raise ValueError("입력 패딩 종류가 valid, same, causal 중 하나가 아닙니다. value : {}".format(value))
 
     return padding
@@ -34,12 +34,17 @@ def compute_padding_size(padding, i, f, s):
         p = 0
     return p
 
-def compute_output_size(padding, i, f, s):
+def compute_output_padding_size(padding, i, k, s):
+    # O = (I - K + 2P) / S + 1
+    
     if padding == 'same':
-        o = i // s
-    else:
-        o = math.floor((i - f) / s + 1)
-    return o
+        o = math.ceil(i / s)
+        p = math.floor(((o - 1) * s + k - i) / 2)
+    elif padding == 'valid':
+        o = math.floor((i - k) / s + 1)
+        p = 0
+
+    return o, p
 
 
     

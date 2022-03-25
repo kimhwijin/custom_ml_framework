@@ -26,8 +26,6 @@ class Conv2D(Layer):
         self.strides = conv_utils.normalize_tuple(strides, 2)
         self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2)
         self.padding = conv_utils.valid_check_padding(padding)
-        if self.padding == 'causal':
-            raise ValueError('Causal 패딩은 Conv1D 에서만 사용됩니다.')
         self.use_bias = use_bias
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.bias_initializer = initializers.get(bias_initializer)
@@ -37,12 +35,13 @@ class Conv2D(Layer):
         self.groups = groups
 
     def compute_output_shape(self, input_shape):
-        """O = (I - K + 2P) / S + 1
-        padding same : 
-        """
+        # O = (I - K + 2P) / S + 1
         ih, iw = input_shape[1:3]
-        oh = conv_utils.compute_output_size(self.padding, ih, self.kernel_size[0], self.strides[0])
-        ow = conv_utils.compute_output_size(self.padding, iw, self.kernel_size[1], self.strides[1])
+        oh, ph = conv_utils.compute_output_padding_size(self.padding, ih, self.kernel_size[0], self.strides[0])
+        ow, pw = conv_utils.compute_output_padding_size(self.padding, iw, self.kernel_size[1], self.strides[1])
+        
+        self.padding_size = (ph, pw)
+
         return (input_shape[0], oh, ow, self.filters)
         
     def build(self, input_shape):
@@ -60,6 +59,7 @@ class Conv2D(Layer):
             bias_shape = (1, self.filters, ) + (1,) * len(self.kernel_size)
             self.bias = self.bias_initializer(bias_shape, dtype=self.dtype)
         
+        self.output_size = self.compute_output_shape(input_shape)
 
     def forward(self, inputs):
         if inputs.dtype != self.dtype:
