@@ -50,19 +50,21 @@ class Conv2D(Layer):
     def build(self, input_shape):
         # Input shape :  N x XH x XW x XC
         # Output shape : N x YH x YW x YC
-        # W :            XC x YC x KH x KW
-        # b :            1 x YC x 1 x 1
+        # W :            KH x KW x XC x YC
+        # b :            1 x 1 x 1 x YC
+        self.input_shape = input_shape
+        self.output_shape = self.compute_output_shape(input_shape)
+        _, _, _, XC = input_shape
+        _, _, _, YC = self.output_shape
+        KH, KW = self.kernel_size
 
-        input_channel = input_shape[-1]
-        
-        kernel_shape = (input_channel, self.filters, *self.kernel_size)
+        kernel_shape = (KH, KW, XC, YC)
         self.weight = self.kernel_initializer(kernel_shape, dtype=self.dtype)
 
         if self.use_bias:
-            bias_shape = (self.filters, )
+            bias_shape = (1, 1, 1, YC)
             self.bias = self.bias_initializer(bias_shape, dtype=self.dtype)
         
-        self.output_size = self.compute_output_shape(input_shape)
 
     def forward(self, inputs):
         if inputs.dtype != self.dtype:
@@ -73,21 +75,59 @@ class Conv2D(Layer):
         x = inputs
 
         # ( N x YH x YW , XC x KH x KW )
-        flat_x = conv_utils.img2col(x, self.output_size, self.kernel_size, self.strides, self.padding_size)
-        # ( XC x KW x KW , YC )
-        flat_w = self.weight.reshape(self.filters, -1).T
-        # ( N x YH x YW , YC )
-        flat_y = np.dot(flat_x, flat_w) + self.bias
-        # Reshape : ( N x YH x YW x YC )
-        # Transpose : ( N x YC x YH x YW )
-        y = flat_y.reshape(*self.output_size).transpose(0, 3, 1, 2)
+        flat_x = conv_utils.img2col(x, self.output_shape, self.kernel_size, self.strides, self.padding_size)
+        
+
+        # weight : KH x KW x XC x YC
+        #Transpose : XC x KH x KW x YC
+        #Reshape : ( XC x KH x KW , YC )
+        flat_w = self.weight.transpose((2,0,1,3)).reshape(-1, self.filters)
+        
+        flat_b = self.bias.reshape(1, -1)
+        # Dot : ( N x YH x YW , YC ) + ( 1 x 1 x 1, YC)
+        flat_y = np.dot(flat_x, flat_w) + flat_b
+        # Reshape : N x YH x YW x YC
+        y = flat_y.reshape(*self.output_shape)
         
         if self.training:
-            self.x = x
-            self.flat_x = flat_x
+            self.flat_x = conv_utils.average_flat_x(flat_x, y.shape)
             self.flat_w = flat_w
-    
         return y
 
 
-    
+    def backprop(self, dLdy, optimizer):
+        # dLdy : YH x YW x YC
+        # dydw : ( YH x YW x YC ) x ( KH x KW x XC x YC )
+        # dLdw : KH x KW x XC x YC
+        YH, YW, YC = dLdy.shape
+        KH, KW, XC, YC =  self.weight.shape
+        
+        # Reshape : ( YH x YW , YC )
+        flat_dLdy = dLdy.reshape(-1, YC)
+        
+        # flat_x.T : ( XC x KH x KW , YH x YW )
+        # flat_dLdy : ( YH x YW , YC )
+        # Dot : ( XC x KH x KW , YC )
+        # Reshape : XC x KH x KW x YC
+        # Transpose : KH x KW x XC x YC
+
+        dLdw = np.dot(self.flat_x.T, flat_dLdy).reshape(XC, KH, KW, YC).transpose((1, 2, 0, 3))
+
+        kernel_regularize_term = self.kernel_regularizer(self.weight) if self.kernel_regularizer is not None else 0
+        kernel_delta = dLdw + kernel_regularize_term
+
+        self.weight = self.weight - optimizer.learning_rate * kernel_delta
+
+        
+        if self.use_bias:
+            bias_regularize_term = self.bias_regularizer(self.bias) if self.bias_regularizer is not None else 0
+            bias_delta = dLdy + bias_regularize_term
+            self.bias = self.bias - optimizer.learning_rate * bias_delta
+
+        # flat_dLdy : ( YH x YW , YC )
+        # flat_w.T : ( YC , XC x KH x KW )
+        # Dot : ( YH x YW , XC x KH x KW )
+        flat_dLdx = np.dot(flat_dLdy ,self.flat_w.T)
+        dLdx = conv_utils.col2img(flat_dLdx, self.input_shape, self.output_shape, self.kernel_size, self.strides, self.padding_size)
+
+        return dLdx

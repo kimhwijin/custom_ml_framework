@@ -51,29 +51,52 @@ def img2col(x, y_shape, kernel_size, stride, padding_size):
     # x : N, XH, XW, XC
     # y : N, YH, YW, YC
 
-    kh, kw = kernel_size
-    sh, sw = stride
-    ph, pw = padding_size
+    KH, KW = kernel_size
+    SH, SW = stride
+    PH, PW = padding_size
 
-    n, xh, xw, xc = x.shape
-    n, yh, yw, yc = y_shape
+    N, XH, XW, XC = x.shape
+    N, YH, YW, YC = y_shape
     
     # N, XH + 2PH, XW + 2PW, XC
-    padded_x = np.pad(x, [(0, 0), (ph, ph), (pw, pw), (0, 0)], 'constant')
+    padded_x = np.pad(x, [(0, 0), (PH, PH), (PW, PW), (0, 0)], 'constant')
 
     # N, KH, KW, YH, YW, XC
-    col = np.zeros((n, kh, kw, yh, yw, xc))
+    col = np.zeros((N, KH, KW, YH, YW, XC))
 
-    for h in range(kh):
-        h_max = h + sh * yh
-        for w in range(kw):
-            w_max = w + sw * yw
-            col[:, h, w, :, :, :] = padded_x[:, h:h_max:sh, w:w_max:sw, :]
+    for h in range(KH):
+        h_max = h + SH * YH
+        for w in range(KW):
+            w_max = w + SW * YW
+            col[:, h, w, :, :, :] = padded_x[:, h:h_max:SH, w:w_max:SW, :]
     
     # Transpose : N , YH , YW , XC , KH, KW
-    # Reshape : N x YH x YH , XC x KH x KW
-    col = np.transpose(col, (0,3,4,5,1,2)).reshape(n*yh*yw, -1)
+    # Reshape : N x YH x YW , XC x KH x KW
+    col = col.transpose((0,3,4,5,1,2)).reshape(N*YH*YW, -1)
     return col
 
+def average_flat_x(flat_x, y_shape):
+    n, yh, yw, _ = y_shape
+    return np.mean(flat_x.reshape(n, yh*yw, -1), axis=0)
     
+
+def col2img(flat_dLdx, x_shape, y_shape, kernel_size, stride, padding_size):
+    # ( YH x YW , XC x KH x KW )
+    KH, KW = kernel_size
+    SH, SW = stride
+    PH, PW = padding_size
+
+    _, XH, XW, XC = x_shape
+    _, YH, YW, YC = y_shape
+    # XC x KH x KW x YH x YW
+    flat_dLdx = flat_dLdx.reshape(YH, YW, XC, KH, KW).transpose((2, 3, 4, 0, 1))
+
+    img = np.zeros((XC, XH + 2 * PH + SH - 1, XW + 2 * PW + SW - 1))
+    for y in range(KH):
+        y_max = y + SH * YH
+        for x in range(KW):
+            x_max = x + SW * YW
+            img[:, y:y_max:SH, x:x_max:SW] += flat_dLdx[:, y, x, :, :]
+    
+    return img[:, PH:XH + PH, PH:XW + PH]
 
