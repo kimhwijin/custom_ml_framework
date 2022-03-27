@@ -1,6 +1,0 @@
-# ninja log v5
-1	18	1646725866178523835	CMakeFiles/c__.dir/abalone/InitModel.cpp.o	50f85795c697d5f3
-0	325	1646725866483468842	CMakeFiles/c__.dir/abalone/AbaloneExecute.cpp.o	83c09cd7b51890e8
-0	384	1646725866542805836	CMakeFiles/c__.dir/abalone/LoadCsvDataset.cpp.o	7c2846367e0a4f5b
-384	413	1646725866573947970	c__	ce77ce1dabc2b9c5
-0	5	0	clean	5def9b2a62621039

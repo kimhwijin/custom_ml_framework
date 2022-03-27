@@ -1,4 +1,0 @@
-"/Users/hwijin/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/cmake/mac/bin/cmake" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=/Users/hwijin/Library/Application Support/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/CLion.app/Contents/bin/ninja/mac/ninja" -G Ninja /Users/hwijin/Desktop/Code/ml/ml_framework/c++
--- Configuring done
--- Generating done
--- Build files have been written to: /Users/hwijin/Desktop/Code/ml/ml_framework/c++/build
