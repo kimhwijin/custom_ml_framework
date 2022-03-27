@@ -65,10 +65,7 @@ class Dense(Layer):
     
 
     def backprop(self, dLdy, optimizer):
-        #y = xw + b
-        #dLdw = dydw * dLdy
-        #dLdb = dydb * dLdy = dLdy
-
+        
         kernel_regularize_term = self.kernel_regularizer(self.weight) if self.kernel_regularizer is not None else 0
 
         dLdw = np.matmul(self.x.T, dLdy)
@@ -76,7 +73,7 @@ class Dense(Layer):
         self.weight = self.weight - optimizer.learning_rate * kernel_delta
 
         if self.use_bias:
-            
+
             bias_regularize_term = self.bias_regularizer(self.bias) if self.bias_regularizer is not None else 0
 
             dLdb = dLdy
