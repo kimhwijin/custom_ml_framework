@@ -85,7 +85,10 @@ class Conv2D(Layer):
         
         flat_b = self.bias.reshape(1, -1)
         # Dot : ( N x YH x YW , YC ) + ( 1 x 1 x 1, YC)
-        flat_y = np.dot(flat_x, flat_w) + flat_b
+        flat_y = np.dot(flat_x, flat_w)
+        if self.use_bias:
+            flat_y += flat_b
+            
         # Reshape : N x YH x YW x YC
         y = flat_y.reshape(*self.output_shape)
         

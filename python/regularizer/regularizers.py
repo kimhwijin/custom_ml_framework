@@ -1,10 +1,10 @@
 import numpy as np
 
 def l2(weight, alpha=0.01):
-    return alpha * np.sqrt(np.sum(np.square(weight)))
+    return alpha * np.sum(np.square(weight))
 
 def l2_diff(weight, alpha=0.01):
-    return alpha * np.abs(weight)
+    return alpha * weight
 
 def l1(weight, alpha=0.01):
     return alpha * np.sum(np.abs(weight))
