@@ -14,6 +14,9 @@ def glorot_uniform(shape, dtype, gain=1.):
 def zeros(shape, dtype):
     return np.zeros(shape, dtype=dtype)
 
+def ones(shape, dtype):
+    return np.zeros(shape, dtype=dtype)
+
 def _calculate_fan_in_fan_out(shape):
     #dense : [input_dim, output_dim]
     #conv 2d : [input_dim, output_dim, 3, 3]
