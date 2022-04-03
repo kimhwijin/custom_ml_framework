@@ -23,8 +23,6 @@ class Dropout(Layer):
         mask = np.random.binomial(1, self.rate, inputs.shape, dtype=self.dtype)
         y = x * mask / (1. - self.rate)
         self.mask = mask
-        self.y = y
-
         return y
 
     def backprop(self, dLdy):
